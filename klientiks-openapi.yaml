@@ -1,0 +1,3006 @@
+openapi: 3.1.0
+info:
+  title: Клиентикс CRM API
+  version: '260605'
+  description: 'Полная машинно-читаемая спецификация по статье «Методы API Клиентикс CRM v260605» #787. Все операции выполняются
+    HTTP GET, включая создание и редактирование; параметры передаются в query string. Рекомендуемая внешняя авторизация: account_id
+    и user_id в пути, токен в заголовке Authorization: Bearer. Авторизованная браузерная сессия может использовать путь без
+    /a/{account_id}/u/{user_id}; вариант /t/{token} устарел и небезопасен. Лимит: не более 60 запросов в минуту на account_id
+    с одного IP, не более 100 результатов за запрос, стандартный limit 50. Из-за использования GET для мутаций нельзя автоматически
+    повторять, кэшировать или prefetch-ить add/edit-запросы.'
+  x-source-article: https://klientikscrm.helpdeskeddy.com/ru/knowledge_base/article/787/category/62/
+  x-authentication-variants:
+    recommended: 'Authorization: Bearer {access_token}; account_id и user_id в URL'
+    authorized-session: Без токена в URL/заголовке, только внутри действующей браузерной сессии
+    legacy-deprecated: Токен в сегменте /t/{token}; не рекомендуется из-за утечки в логи и историю
+  x-rate-limits:
+    requestsPerMinutePerAccountPerIp: 60
+    maxResultsPerRequest: 100
+    defaultLimit: 50
+externalDocs:
+  description: Исходная документация Клиентикс CRM
+  url: https://klientikscrm.helpdeskeddy.com/ru/knowledge_base/article/787/category/62/
+servers:
+- url: https://klientiks.ru/clientix/Restapi
+  description: Клиентикс CRM
+security:
+- BearerAuth: []
+tags:
+- name: Создание
+- name: Коммуникации
+- name: Продажи
+- name: Чтение
+- name: Редактирование
+- name: Склад
+paths:
+  /add/a/{account_id}/u/{user_id}/m/Clients/:
+    get:
+      tags:
+      - Создание
+      summary: Добавить клиента
+      operationId: addClient
+      description: Создает карточку клиента. Все значения передаются в query string.
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: phone
+        in: query
+        required: true
+        description: Телефон клиента.
+        schema:
+          type: string
+        example: '71234445566'
+      - name: first_name
+        in: query
+        required: true
+        description: Имя клиента.
+        schema:
+          type: string
+        example: Иван
+      - name: patron_name
+        in: query
+        required: false
+        description: Отчество клиента.
+        schema:
+          type: string
+        example: Иванович
+      - name: second_name
+        in: query
+        required: false
+        description: Фамилия клиента.
+        schema:
+          type: string
+        example: Иванов
+      - name: email
+        in: query
+        required: false
+        description: Email клиента.
+        schema:
+          type: string
+          format: email
+        example: test@test.com
+      - name: client_groups
+        in: query
+        required: false
+        description: Группы клиента через запятую.
+        schema:
+          type: array
+          items:
+            type: string
+        example:
+        - Новенький
+        style: form
+        explode: false
+      - name: living_address
+        in: query
+        required: false
+        description: Адрес клиента.
+        schema:
+          type: string
+        example: Невский проспект, 25
+      - name: sex
+        in: query
+        required: false
+        description: 'Пол клиента: 1 - мужской, 0 - женский.'
+        schema:
+          type: integer
+          enum:
+          - 0
+          - 1
+        example: 1
+      - name: appointment_confirmation_sms
+        in: query
+        required: false
+        description: 'Согласие на получение SMS: 1 - согласен, 0 - не согласен.'
+        schema:
+          type: integer
+          enum:
+          - 0
+          - 1
+        example: 1
+      - name: lead_source
+        in: query
+        required: false
+        description: Источник клиента.
+        schema:
+          type: string
+        example: Газета
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /add/m/Clients/
+      x-legacy-token-in-url-path: /add/a/{account_id}/u/{user_id}/t/{token}/m/Clients/
+  /add/a/{account_id}/u/{user_id}/m/Calls/:
+    get:
+      tags:
+      - Создание
+      summary: Добавить звонок
+      operationId: addCall
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: phone
+        in: query
+        required: true
+        description: Телефон клиента. Если клиента с таким номером нет, он создается.
+        schema:
+          type: string
+        example: '74445550011'
+      - name: type
+        in: query
+        required: true
+        description: Тип звонка.
+        schema:
+          type: string
+          enum:
+          - INCOMING
+          - OUTGOING
+        example: INCOMING
+      - name: link
+        in: query
+        required: false
+        description: Ссылка на запись звонка.
+        schema:
+          type: string
+          format: uri
+        example: https://example.invalid/call.mp3
+      - name: status
+        in: query
+        required: true
+        description: Статус звонка.
+        schema:
+          type: string
+        example: ANSWERED
+      - name: duration
+        in: query
+        required: true
+        description: Длительность звонка в секундах.
+        schema:
+          type: integer
+          minimum: 0
+        example: 60
+      - name: ext
+        in: query
+        required: true
+        description: Добавочный номер сотрудника, который поднял трубку.
+        schema:
+          type: string
+        example: '1234'
+      - name: callid
+        in: query
+        required: true
+        description: Идентификатор звонка.
+        schema:
+          type: string
+        example: '150710871688943'
+      - name: cmd
+        in: query
+        required: true
+        description: event - уведомление о входящем звонке; history - создание записи о звонке.
+        schema:
+          type: string
+          enum:
+          - event
+          - history
+        example: event
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /add/m/Calls/
+      x-legacy-token-in-url-path: /add/a/{account_id}/u/{user_id}/t/{token}/m/Calls/
+  /add/a/{account_id}/u/{user_id}/m/Appointments/:
+    get:
+      tags:
+      - Создание
+      summary: Добавить визит в режиме одиночной записи
+      operationId: addAppointment
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: client_id
+        in: query
+        required: true
+        description: Идентификатор клиента.
+        schema:
+          type: integer
+        example: 709776
+      - name: executor_id
+        in: query
+        required: true
+        description: Идентификатор сотрудника-исполнителя.
+        schema:
+          type: integer
+        example: 35509
+      - name: status
+        in: query
+        required: true
+        description: Статус визита.
+        schema:
+          type: string
+          enum: &id001
+          - cancelled
+          - in_progress
+          - scheduled
+          - finished
+          - missed
+          - confirmed
+          - cancelled_by_sms
+          - sms_confirmation_sent
+        example: scheduled
+      - name: start_datetime
+        in: query
+        required: true
+        description: Дата начала визита.
+        schema:
+          type: string
+        example: '2017-12-21'
+      - name: start_time
+        in: query
+        required: true
+        description: Время начала, кратное 15 минутам.
+        schema:
+          type: string
+        example: '12:00:00'
+      - name: finish_datetime
+        in: query
+        required: true
+        description: Дата завершения визита.
+        schema:
+          type: string
+        example: '2017-12-21'
+      - name: finish_time
+        in: query
+        required: true
+        description: Время завершения, кратное 15 минутам.
+        schema:
+          type: string
+        example: '12:30:00'
+      - name: appointed_services
+        in: query
+        required: false
+        description: Идентификаторы назначенных услуг через запятую.
+        schema:
+          type: array
+          items:
+            type: integer
+        example:
+        - 311667
+        - 500204
+        style: form
+        explode: false
+      - name: subclient_id
+        in: query
+        required: false
+        description: Идентификатор субклиента для версии с субклиентами.
+        schema:
+          type: integer
+        example: 11111
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /add/m/Appointments/
+      x-legacy-token-in-url-path: /add/a/{account_id}/u/{user_id}/t/{token}/m/Appointments/
+  /add/a/{account_id}/u/{user_id}/m/AppointmentClientLinks:
+    get:
+      tags:
+      - Создание
+      summary: Добавить клиента в групповой визит
+      operationId: addClientToGroupAppointment
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: appointment_id
+        in: query
+        required: true
+        description: Идентификатор записи.
+        schema:
+          type: integer
+        example: 1302873
+      - name: client_id
+        in: query
+        required: true
+        description: Идентификатор клиента.
+        schema:
+          type: integer
+        example: 1064079
+      - name: client_ids
+        in: query
+        required: false
+        description: Массив идентификаторов клиентов через запятую.
+        schema:
+          type: array
+          items:
+            type: integer
+        example:
+        - 1064079
+        - 1064080
+        style: form
+        explode: false
+      - name: service_pack_id
+        in: query
+        required: false
+        description: Идентификатор скидки или абонемента.
+        schema:
+          type: integer
+        example: 95483
+      - name: appointment_source
+        in: query
+        required: false
+        description: Источник визита.
+        schema:
+          type: string
+        example: Internet
+      - name: internal_source
+        in: query
+        required: false
+        description: Внутренний источник визита.
+        schema:
+          type: string
+          enum:
+          - INTERNAL_SOURCE_VK
+          - INTERNAL_SOURCE_SITE
+          - INTERNAL_SOURCE_CALL
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /add/m/AppointmentClientLinks
+      x-legacy-token-in-url-path: /add/a/{account_id}/u/{user_id}/t/{token}/m/AppointmentClientLinks
+  /add/a/{account_id}/u/{user_id}/m/Appointments/s/apiAdd/:
+    get:
+      tags:
+      - Создание
+      summary: Добавить визит для нового клиента
+      operationId: addAppointmentForNewClient
+      description: Создает визит и нового клиента. Для корректного подтверждения визитов рекомендуется отдельный API-пользователь.
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: executor_id
+        in: query
+        required: true
+        description: Идентификатор сотрудника-исполнителя.
+        schema:
+          type: integer
+        example: 9413
+      - name: service_id[]
+        in: query
+        required: true
+        description: Один или несколько идентификаторов услуг. Повторите параметр для каждой услуги.
+        schema:
+          type: array
+          items:
+            type: integer
+        example:
+        - 136569
+        style: form
+        explode: true
+      - name: start_datetime
+        in: query
+        required: true
+        description: Дата и время начала визита.
+        schema:
+          type: string
+        example: '2018-07-13 17:00:00'
+      - name: first_name
+        in: query
+        required: true
+        description: Имя клиента.
+        schema:
+          type: string
+        example: Иван
+      - name: phone
+        in: query
+        required: true
+        description: Телефон клиента.
+        schema:
+          type: string
+        example: '79111100005'
+      - name: subclient_name
+        in: query
+        required: false
+        description: Имя субклиента для версии с субклиентами.
+        schema:
+          type: string
+      - name: appointment_id
+        in: query
+        required: false
+        description: ID существующего визита при записи на групповое занятие.
+        schema:
+          type: integer
+      - name: living_address
+        in: query
+        required: false
+        description: Адрес клиента.
+        schema:
+          type: string
+        example: Невский 1
+      - name: birth_date
+        in: query
+        required: false
+        description: Дата рождения клиента.
+        schema:
+          type: string
+        example: 23.02.1991
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /add/m/Appointments/s/apiAdd/
+      x-legacy-token-in-url-path: /add/a/{account_id}/u/{user_id}/t/{token}/m/Appointments/s/apiAdd/
+      x-documentation-notes:
+      - В аккаунте должен быть включен и настроен виджет онлайн-записи.
+  /add/a/{account_id}/u/{user_id}/m/Appointments/s/waitingListItemAdd:
+    get:
+      tags:
+      - Создание
+      summary: Добавить запись в лист ожидания
+      operationId: addWaitingListItem
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: client_id
+        in: query
+        required: true
+        description: Идентификатор клиента.
+        schema:
+          type: integer
+        example: 709776
+      - name: start_datetime
+        in: query
+        required: true
+        description: Дата, на которую создается запись в лист ожидания.
+        schema:
+          type: string
+        example: '2017-12-21'
+      - name: urgent
+        in: query
+        required: false
+        description: Флаг срочности.
+        schema:
+          type: integer
+          enum:
+          - 0
+          - 1
+        example: 1
+      - name: executor_id
+        in: query
+        required: false
+        description: Идентификатор сотрудника-исполнителя.
+        schema:
+          type: integer
+        example: 35509
+      - name: client_memo
+        in: query
+        required: false
+        description: Комментарий, добавляемый к заметке клиента.
+        schema:
+          type: string
+        example: Комментарий к визиту
+      - name: appointment_source
+        in: query
+        required: false
+        description: Источник визита.
+        schema:
+          type: string
+        example: Вконтакте
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /add/m/Appointments/s/waitingListItemAdd
+      x-legacy-token-in-url-path: /add/a/{account_id}/u/{user_id}/t/{token}/m/Appointments/s/waitingListItemAdd
+  /add/a/{account_id}/u/{user_id}/m/ScheduleUnit/:
+    get:
+      tags:
+      - Создание
+      summary: Добавить расписание сотруднику
+      operationId: addScheduleUnit
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: user_id
+        in: query
+        required: true
+        description: Идентификатор сотрудника или кабинета.
+        schema:
+          type: integer
+        example: 37451
+      - name: start_time
+        in: query
+        required: true
+        description: Дата и время начала.
+        schema:
+          type: string
+        example: 2017-12-23 10:00
+      - name: end_time
+        in: query
+        required: true
+        description: Дата и время окончания.
+        schema:
+          type: string
+        example: 2017-12-23 18:00
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /add/m/ScheduleUnit/
+      x-legacy-token-in-url-path: /add/a/{account_id}/u/{user_id}/t/{token}/m/ScheduleUnit/
+  /add/a/{account_id}/u/{user_id}/m/Invoices/:
+    get:
+      tags:
+      - Создание
+      summary: Добавить оплату по счету
+      operationId: addInvoicePayment
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: id
+        in: query
+        required: true
+        description: Идентификатор счета.
+        schema:
+          type: integer
+        example: 481847
+      - name: financial_account_id
+        in: query
+        required: true
+        description: Идентификатор финансового счета (кассы).
+        schema:
+          type: integer
+        example: 334436
+      - name: amount
+        in: query
+        required: true
+        description: Размер оплаты.
+        schema:
+          type: number
+        example: 1000
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /add/m/Invoices/
+      x-legacy-token-in-url-path: /add/a/{account_id}/u/{user_id}/t/{token}/m/Invoices/
+  /add/a/{account_id}/u/{user_id}/m/Invoices/s/addForm/:
+    get:
+      tags:
+      - Создание
+      summary: Добавить счет
+      operationId: addInvoice
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: object_type
+        in: query
+        required: true
+        description: Тип объекта, для которого создается счет.
+        schema:
+          type: string
+          enum:
+          - abonement
+          - appointment
+          - sale
+        example: appointment
+      - name: object_id
+        in: query
+        required: true
+        description: Идентификатор объекта.
+        schema:
+          type: integer
+        example: 1316987
+      - name: client_id
+        in: query
+        required: true
+        description: Идентификатор клиента.
+        schema:
+          type: integer
+        example: 626297
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /add/m/Invoices/s/addForm/
+      x-legacy-token-in-url-path: /add/a/{account_id}/u/{user_id}/t/{token}/m/Invoices/s/addForm/
+  /add/a/{account_id}/u/{user_id}/m/DynamicFields/:
+    get:
+      tags:
+      - Создание
+      summary: Добавить динамическое поле
+      operationId: addDynamicField
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: model
+        in: query
+        required: true
+        description: Модель, к которой добавляется поле.
+        schema:
+          type: string
+        example: Clients
+      - name: data
+        in: query
+        required: true
+        description: JSON-массив с конфигурацией отображения нового поля. Передается URL-кодированным JSON.
+        schema:
+          type: string
+        example: '[{"setJsonFields":["comment1"],"setRules":[["comment1","safe"]]}'
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /add/m/DynamicFields/
+      x-legacy-token-in-url-path: /add/a/{account_id}/u/{user_id}/t/{token}/m/DynamicFields/
+  /add/a/{account_id}/u/{user_id}/m/Clients/m/Notifications/:
+    get:
+      tags:
+      - Создание
+      summary: Добавить задачу
+      operationId: addClientTask
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: executor_id
+        in: query
+        required: true
+        description: Идентификатор исполнителя.
+        schema:
+          type: integer
+        example: 35499
+      - name: client_id
+        in: query
+        required: false
+        description: Идентификатор клиента. Используется вместо client_phone.
+        schema:
+          type: integer
+        example: 1136308
+      - name: client_phone
+        in: query
+        required: false
+        description: Телефон клиента; работает, если client_id не указан.
+        schema:
+          type: string
+      - name: planed_execution_datetime
+        in: query
+        required: true
+        description: Плановая дата и время задачи в формате PHP datetime. Имя параметра содержит одну n согласно документации.
+        schema:
+          type: string
+        example: '2018-03-24 16:45:00'
+      - name: heading
+        in: query
+        required: true
+        description: Заголовок задачи/уведомления.
+        schema:
+          type: string
+        example: Тест задачи
+      - name: message
+        in: query
+        required: true
+        description: Текст задачи/уведомления.
+        schema:
+          type: string
+        example: А вот и он
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /add/m/Clients/m/Notifications/
+      x-legacy-token-in-url-path: /add/a/{account_id}/u/{user_id}/t/{token}/m/Clients/m/Notifications/
+      x-documentation-notes:
+      - Нужно передать client_id либо client_phone.
+  /add/a/{account_id}/u/{user_id}:
+    get:
+      tags:
+      - Коммуникации
+      summary: Отправить сообщение из ленты коммуникаций клиента
+      operationId: sendMessageFromClientFeed
+      description: Добавляет заметку, создает задачу, отправляет SMS, push или сообщение через UIS OMNI/Wazzup24. Текстовые
+        значения необходимо URL-кодировать.
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: m
+        in: query
+        required: true
+        description: Модель; фиксированное значение Clients.
+        schema:
+          type: string
+          enum:
+          - Clients
+          default: Clients
+        example: Clients
+      - name: s
+        in: query
+        required: true
+        description: Сценарий; фиксированное значение sendMessageFromFeed.
+        schema:
+          type: string
+          enum:
+          - sendMessageFromFeed
+          default: sendMessageFromFeed
+        example: sendMessageFromFeed
+      - name: validation
+        in: query
+        required: false
+        description: 'Режим валидации jq-формы: вернуть ошибки без выполнения действия.'
+        schema:
+          type: string
+      - name: id
+        in: query
+        required: true
+        description: Идентификатор клиента.
+        schema:
+          type: integer
+        example: 12345
+      - name: messageType
+        in: query
+        required: true
+        description: Тип действия или канал отправки.
+        schema:
+          type: string
+          enum:
+          - Call
+          - Memo
+          - Task
+          - ClientixSMS
+          - OneSignal
+          - OmniGateWazzup24
+          - OmniGateUis
+        example: Memo
+      - name: message
+        in: query
+        required: false
+        description: Текст сообщения или заметки. Обязателен для всех messageType, кроме Call.
+        schema:
+          type: string
+        example: Клиент попросил перезвонить
+      - name: channel
+        in: query
+        required: false
+        description: Канал UIS OMNI для messageType=OmniGateUis.
+        schema:
+          type: string
+      - name: channel2
+        in: query
+        required: false
+        description: Канал Wazzup24 для messageType=OmniGateWazzup24.
+        schema:
+          type: string
+      - name: task_header
+        in: query
+        required: false
+        description: Заголовок задачи для messageType=Task.
+        schema:
+          type: string
+      - name: executor_id
+        in: query
+        required: false
+        description: Исполнитель задачи для messageType=Task.
+        schema:
+          type: integer
+      - name: planed_execution_datetime
+        in: query
+        required: false
+        description: Плановая дата и время задачи для messageType=Task.
+        schema:
+          type: string
+      - name: daytime
+        in: query
+        required: false
+        description: Время дня для messageType=Task.
+        schema:
+          type: string
+      - name: task_type
+        in: query
+        required: false
+        description: Тип задачи.
+        schema:
+          type: string
+          enum:
+          - NOTIFICATION_TYPE_USER_CREATED
+          - NOTIFICATION_TYPE_INVITE
+      - name: replyTo
+        in: query
+        required: false
+        description: ID входящего сообщения, на которое отвечает пользователь.
+        schema:
+          type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/SendMessageResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /add
+      x-legacy-token-in-url-path: /add/a/{account_id}/u/{user_id}/t/{token}
+      x-documentation-notes:
+      - ClientixSMS требует согласия клиента и настроенной SMS-подписи.
+      - OneSignal требует настроек мобильного приложения.
+      - OmniGateWazzup24 и OmniGateUis требуют корректной настройки соответствующего канала.
+      - Прикладная ошибка может находиться в object при верхнеуровневом status=ok.
+  /add/a/{account_id}/u/{user_id}/m/Clients/m/DynamicObjects:
+    get:
+      tags:
+      - Создание
+      summary: Добавить результат исследования
+      operationId: addResearchResult
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: object_id
+        in: query
+        required: true
+        description: ID клиента.
+        schema:
+          type: integer
+        example: 38373
+      - name: object_type
+        in: query
+        required: true
+        description: Модель Клиенты. Таблица документации помечает параметр обязательным, хотя пример его опускает.
+        schema:
+          type: string
+        example: Clients
+      - name: research_type
+        in: query
+        required: false
+        description: Динамическое поле результата исследования.
+        schema:
+          type: string
+        example: лабораторное исследование
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /add/m/Clients/m/DynamicObjects
+      x-legacy-token-in-url-path: /add/a/{account_id}/u/{user_id}/t/{token}/m/Clients/m/DynamicObjects
+  /setClientRoistatVisit/a/{account_id}/u/{user_id}:
+    get:
+      tags:
+      - Создание
+      summary: Установить клиенту источник визита Roistat
+      operationId: setClientRoistatVisit
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: client_id
+        in: query
+        required: true
+        description: Идентификатор клиента.
+        schema:
+          type: integer
+        example: 626297
+      - name: visit_id
+        in: query
+        required: true
+        description: Номер визита в Roistat.
+        schema:
+          type: integer
+        example: 1316987
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /setClientRoistatVisit
+      x-legacy-token-in-url-path: /setClientRoistatVisit/a/{account_id}/u/{user_id}/t/{token}
+      x-documentation-notes:
+      - Если у клиента еще нет визитов, создается фиктивный визит со временем жизни две недели.
+  /add/a/{account_id}/u/{user_id}/m/Appointments/s/addSale:
+    get:
+      tags:
+      - Продажи
+      summary: Создать продажу товара - шаг 1
+      operationId: addProductSale
+      description: Первый из двух запросов продажи товара. ID созданной продажи нужно передать во второй запрос.
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: sold
+        in: query
+        required: true
+        description: Флаг продажи.
+        schema:
+          type: integer
+          enum:
+          - 0
+          - 1
+        example: 1
+      - name: materials_ids[]
+        in: query
+        required: true
+        description: Идентификаторы товаров.
+        schema:
+          type: array
+          items:
+            type: integer
+        example:
+        - 12345
+        style: form
+        explode: true
+      - name: client_id
+        in: query
+        required: true
+        description: Идентификатор клиента.
+        schema:
+          type: integer
+        example: 12345
+      - name: status
+        in: query
+        required: true
+        description: Статус продажи.
+        schema:
+          type: string
+          enum:
+          - finished
+        example: finished
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /add/m/Appointments/s/addSale
+      x-legacy-token-in-url-path: /add/a/{account_id}/u/{user_id}/t/{token}/m/Appointments/s/addSale
+  /edit/a/{account_id}/u/{user_id}/m/Appointments/s/editSale:
+    get:
+      tags:
+      - Продажи
+      summary: Завершить продажу товара - шаг 2
+      operationId: editProductSale
+      description: Второй обязательный запрос процесса продажи товара.
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: id
+        in: query
+        required: true
+        description: ID продажи, полученный на первом шаге.
+        schema:
+          type: integer
+      - name: sold
+        in: query
+        required: true
+        description: Флаг продажи.
+        schema:
+          type: integer
+          enum:
+          - 0
+          - 1
+        example: 1
+      - name: client_id
+        in: query
+        required: true
+        description: Идентификатор клиента.
+        schema:
+          type: integer
+        example: 12345
+      - name: status
+        in: query
+        required: true
+        description: Статус продажи.
+        schema:
+          type: string
+          enum:
+          - finished
+        example: finished
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /edit/m/Appointments/s/editSale
+      x-legacy-token-in-url-path: /edit/a/{account_id}/u/{user_id}/t/{token}/m/Appointments/s/editSale
+  /add/a/{account_id}/u/{user_id}/m/Services/:
+    get:
+      tags:
+      - Создание
+      summary: Добавить услугу
+      operationId: addService
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: barcode
+        in: query
+        required: false
+        description: Штрих-код.
+        schema:
+          type: string
+        example: '123456'
+      - name: name
+        in: query
+        required: true
+        description: Название услуги.
+        schema:
+          type: string
+        example: Новая услуга
+      - name: price
+        in: query
+        required: false
+        description: Стоимость.
+        schema:
+          type: number
+        example: 1500
+      - name: service_groups
+        in: query
+        required: false
+        description: Группа услуги.
+        schema:
+          type: string
+        example: Основные
+      - name: vendor_code
+        in: query
+        required: false
+        description: Артикул.
+        schema:
+          type: string
+        example: ART123
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /add/m/Services/
+      x-legacy-token-in-url-path: /add/a/{account_id}/u/{user_id}/t/{token}/m/Services/
+  /list/a/{account_id}/u/{user_id}/m/AppointmentClientLinks/ik/orders:
+    get:
+      tags:
+      - Чтение
+      summary: Получить список визитов и продаж
+      operationId: listAppointmentsAndSales
+      description: Сокращенная выгрузка визитов и продаж, измененных после указанной даты. is_sale=true означает продажу,
+        false - визит.
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: date
+        in: query
+        required: true
+        description: Начало отчетного периода / дата изменения в Unix Timestamp.
+        schema:
+          type: integer
+        example: 1718323200
+      - name: date_till
+        in: query
+        required: false
+        description: Окончание отчетного периода в Unix Timestamp.
+        schema:
+          type: integer
+      - name: filterClient
+        in: query
+        required: false
+        description: ID клиентов через запятую.
+        schema:
+          type: array
+          items:
+            type: integer
+        style: form
+        explode: false
+      - name: is_sale
+        in: query
+        required: false
+        description: true - продажи, false - визиты; без параметра возвращаются оба типа.
+        schema:
+          type: boolean
+      - name: status
+        in: query
+        required: false
+        description: Статусы визита через запятую.
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - finished
+            - in_progress
+            - arrived
+            - missed
+            - cancelled
+            - confirmed
+            - awaiting_list
+            - sms_confirmation_sent
+            - cancelled_by_sms
+        style: form
+        explode: false
+      - name: filter
+        in: query
+        required: false
+        description: Какое поле визита должно попадать в период. По умолчанию modified.
+        schema:
+          type: string
+          enum:
+          - modified
+          - created
+          - start_datetime
+          - finish_datetime
+          default: modified
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /list/m/AppointmentClientLinks/ik/orders
+      x-legacy-token-in-url-path: /list/a/{account_id}/u/{user_id}/t/{token}/m/AppointmentClientLinks/ik/orders
+  /getACL/a/{account_id}/u/{user_id}:
+    get:
+      tags:
+      - Чтение
+      summary: Получить список визитов клиента
+      operationId: getClientAppointments
+      description: Можно передать только client_id, только status или оба. Клиенты встречи находятся в appointment_client_links.
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: client_id
+        in: query
+        required: false
+        description: ID клиента.
+        schema:
+          type: integer
+        example: 626297
+      - name: status
+        in: query
+        required: false
+        description: Статус визита.
+        schema:
+          type: string
+          enum: *id001
+        example: scheduled
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /getACL
+      x-legacy-token-in-url-path: /getACL/a/{account_id}/u/{user_id}/t/{token}
+  /roistatExportAcl/a/{account_id}/u/{user_id}/ik/orders/rvwk/status,s/:
+    get:
+      tags:
+      - Чтение
+      summary: Получить список визитов 2.0
+      operationId: getAppointmentsV2
+      description: Возвращает также фиктивные визиты, созданные назначением источника Roistat. estimate_price - цена без скидок/абонементов/сертификатов/планов
+        лечения; price - цена с их учетом.
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: date
+        in: query
+        required: true
+        description: Дата в Unix Timestamp.
+        schema:
+          type: integer
+        example: 1718323200
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /roistatExportAcl/ik/orders/rvwk/status,s/
+      x-legacy-token-in-url-path: /roistatExportAcl/a/{account_id}/u/{user_id}/t/{token}/ik/orders/rvwk/status,s/
+  /getAppointment/a/{account_id}/u/{user_id}/id/{visit_id}:
+    get:
+      tags:
+      - Чтение
+      summary: Получить информацию о визите по ID
+      operationId: getAppointmentById
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: visit_id
+        in: path
+        required: true
+        description: Один ID визита или несколько ID через запятую; максимум 100.
+        schema:
+          type: string
+        example: '1316987'
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /getAppointment/id/{visit_id}
+      x-legacy-token-in-url-path: /getAppointment/a/{account_id}/u/{user_id}/t/{token}/id/{visit_id}
+      x-documentation-notes:
+      - Чтобы получить цены услуг/товаров с учетом скидки, включите COMPONENT_API_GET_APPOINTMENT_QUERY_INCLUDE_ACSC = true.
+  /list/a/{account_id}/u/{user_id}/m/clients:
+    get:
+      tags:
+      - Чтение
+      summary: Получить список клиентов
+      operationId: listClients
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: date
+        in: query
+        required: false
+        description: Дата в формате, который понимает PHP DateTime. Возвращаются клиенты, измененные после этой даты.
+        schema:
+          type: string
+        example: '1718323200'
+      - name: id
+        in: query
+        required: false
+        description: Один или несколько ID клиентов через запятую.
+        schema:
+          type: array
+          items:
+            type: integer
+        style: form
+        explode: false
+      - name: offset
+        in: query
+        required: false
+        description: Смещение пагинации.
+        schema:
+          type: integer
+          minimum: 0
+      - name: limit
+        in: query
+        required: false
+        description: Лимит результатов; серверный максимум 100.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /list/m/clients
+      x-legacy-token-in-url-path: /list/a/{account_id}/u/{user_id}/t/{token}/m/clients
+  /list/a/{account_id}/u/{user_id}/m/SubClients:
+    get:
+      tags:
+      - Чтение
+      summary: Получить список субклиентов
+      operationId: listSubClients
+      description: Возвращает неархивированных субклиентов доступных сотруднику филиалов, включая персональные данные, ЕГИСЗ
+        и динамические поля. Сортировка по modified убыванию.
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: date
+        in: query
+        required: false
+        description: 'Изменены не раньше даты. Форматы: YYYY-MM-DD HH:mm:ss, DD.MM.YYYY, DD.MM.YYYY HH:mm:ss; без времени
+          используется 00:00:00.'
+        schema:
+          type: string
+        example: '2026-08-03 14:30:00'
+      - name: offset
+        in: query
+        required: false
+        description: Сколько записей пропустить.
+        schema:
+          type: integer
+          minimum: 0
+        example: 0
+      - name: limit
+        in: query
+        required: false
+        description: Сколько записей вернуть; максимум API 100.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+        example: 20
+      responses:
+        '200':
+          $ref: '#/components/responses/SubClientsResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /list/m/SubClients
+      x-legacy-token-in-url-path: /list/a/{account_id}/u/{user_id}/t/{token}/m/SubClients
+  /list/a/{account_id}/u/{user_id}/m/getClientByPhone:
+    get:
+      tags:
+      - Чтение
+      summary: Получить клиента по телефону
+      operationId: getClientByPhone
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: phone
+        in: query
+        required: true
+        description: Телефон клиента.
+        schema:
+          type: string
+        example: '79111100005'
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /list/m/getClientByPhone
+      x-legacy-token-in-url-path: /list/a/{account_id}/u/{user_id}/t/{token}/m/getClientByPhone
+  /list/a/{account_id}/u/{user_id}/m/Clients/s/searchAPI:
+    get:
+      tags:
+      - Чтение
+      summary: Получить клиентов по ФИО
+      operationId: searchClientsByName
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: name
+        in: query
+        required: true
+        description: Любая часть ФИО через пробелы.
+        schema:
+          type: string
+        example: Иванов Иван
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /list/m/Clients/s/searchAPI
+      x-legacy-token-in-url-path: /list/a/{account_id}/u/{user_id}/t/{token}/m/Clients/s/searchAPI
+  /list/a/{account_id}/u/{user_id}/m/Users/:
+    get:
+      tags:
+      - Чтение
+      summary: Получить список сотрудников
+      operationId: listUsers
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: offset
+        in: query
+        required: false
+        description: Смещение пагинации.
+        schema:
+          type: integer
+          minimum: 0
+      - name: limit
+        in: query
+        required: false
+        description: Лимит результатов; максимум API 100.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /list/m/Users/
+      x-legacy-token-in-url-path: /list/a/{account_id}/u/{user_id}/t/{token}/m/Users/
+  /list/a/{account_id}/u/{user_id}/m/Services/:
+    get:
+      tags:
+      - Чтение
+      summary: Получить список услуг и товаров
+      operationId: listServices
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: offset
+        in: query
+        required: false
+        description: Смещение пагинации.
+        schema:
+          type: integer
+          minimum: 0
+      - name: limit
+        in: query
+        required: false
+        description: Лимит результатов; максимум API 100.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /list/m/Services/
+      x-legacy-token-in-url-path: /list/a/{account_id}/u/{user_id}/t/{token}/m/Services/
+  /list/a/{account_id}/u/{user_id}/m/getAccountFinancialAccountIdByClient:
+    get:
+      tags:
+      - Чтение
+      summary: Получить ID депозитного счета клиента
+      operationId: getDepositAccountId
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: client_id
+        in: query
+        required: true
+        description: ID клиента.
+        schema:
+          type: integer
+        example: 626297
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /list/m/getAccountFinancialAccountIdByClient
+      x-legacy-token-in-url-path: /list/a/{account_id}/u/{user_id}/t/{token}/m/getAccountFinancialAccountIdByClient
+  /list/a/{account_id}/u/{user_id}/m/getAccountFinancialAccountIdByClientBonus:
+    get:
+      tags:
+      - Чтение
+      summary: Получить ID бонусного счета клиента
+      operationId: getBonusAccountId
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: client_id
+        in: query
+        required: true
+        description: ID клиента.
+        schema:
+          type: integer
+        example: 626297
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /list/m/getAccountFinancialAccountIdByClientBonus
+      x-legacy-token-in-url-path: /list/a/{account_id}/u/{user_id}/t/{token}/m/getAccountFinancialAccountIdByClientBonus
+  /list/a/{account_id}/u/{user_id}/m/getBalance/:
+    get:
+      tags:
+      - Чтение
+      summary: Получить баланс счета
+      operationId: getBalance
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: financial_account_id
+        in: query
+        required: true
+        description: ID финансового счета.
+        schema:
+          type: integer
+        example: 334436
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /list/m/getBalance/
+      x-legacy-token-in-url-path: /list/a/{account_id}/u/{user_id}/t/{token}/m/getBalance/
+  /list/a/{account_id}/u/{user_id}/m/getBalances:
+    get:
+      tags:
+      - Чтение
+      summary: Получить информацию о кассах
+      operationId: getBalances
+      description: 'Возвращает кассы / финансовые счета аккаунта: название, тип, организацию, тип оплаты, текущий баланс и
+        дату последней транзакции.'
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          $ref: '#/components/responses/BalancesResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /list/m/getBalances
+      x-legacy-token-in-url-path: /list/a/{account_id}/u/{user_id}/t/{token}/m/getBalances
+  /list/a/{account_id}/u/{user_id}/m/ServicePacks/:
+    get:
+      tags:
+      - Чтение
+      summary: Получить список абонементов
+      operationId: listServicePacks
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: offset
+        in: query
+        required: false
+        description: Смещение пагинации.
+        schema:
+          type: integer
+          minimum: 0
+      - name: limit
+        in: query
+        required: false
+        description: Лимит результатов; максимум API 100.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /list/m/ServicePacks/
+      x-legacy-token-in-url-path: /list/a/{account_id}/u/{user_id}/t/{token}/m/ServicePacks/
+  /list/a/{account_id}/u/{user_id}/m/getRevenueTransactions:
+    get:
+      tags:
+      - Чтение
+      summary: Получить список оплат за дату
+      operationId: getRevenueTransactions
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: date_from
+        in: query
+        required: true
+        description: Дата от в формате YYYY-MM-DD.
+        schema:
+          type: string
+        example: '2026-06-01'
+      - name: date_till
+        in: query
+        required: false
+        description: Дата до.
+        schema:
+          type: string
+        example: '2026-06-02'
+      - name: financial_account_id
+        in: query
+        required: false
+        description: Номер кассы.
+        schema:
+          type: integer
+        example: 334436
+      - name: invoice_data_included
+        in: query
+        required: false
+        description: Добавить данные о счетах.
+        schema:
+          type: boolean
+      - name: filterClient
+        in: query
+        required: false
+        description: ID клиентов через запятую.
+        schema:
+          type: array
+          items:
+            type: integer
+        style: form
+        explode: false
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /list/m/getRevenueTransactions
+      x-legacy-token-in-url-path: /list/a/{account_id}/u/{user_id}/t/{token}/m/getRevenueTransactions
+  /list/a/{account_id}/u/{user_id}/m/availableTimes:
+    get:
+      tags:
+      - Чтение
+      summary: Получить свободное время для записи
+      operationId: getAvailableTimes
+      description: Учитывает расписание сотрудников и длительность услуг; если длительность не задана, используется шаг визита
+        по умолчанию 60 минут.
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: start_day
+        in: query
+        required: true
+        description: Начальная дата.
+        schema:
+          type: string
+        example: '2026-06-01'
+      - name: finish_day
+        in: query
+        required: false
+        description: Конечная дата.
+        schema:
+          type: string
+        example: '2026-06-07'
+      - name: service_id[]
+        in: query
+        required: false
+        description: Услуги; возвращается время сотрудников, которые их оказывают.
+        schema:
+          type: array
+          items:
+            type: integer
+        example:
+        - 136569
+        style: form
+        explode: true
+      - name: executor_id
+        in: query
+        required: true
+        description: ID сотрудника-исполнителя.
+        schema:
+          type: integer
+        example: 35509
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /list/m/availableTimes
+      x-legacy-token-in-url-path: /list/a/{account_id}/u/{user_id}/t/{token}/m/availableTimes
+      x-documentation-notes:
+      - В аккаунте должен быть включен и настроен виджет онлайн-записи.
+  /list/a/{account_id}/u/{user_id}/m/getAppointmentsByExecutorAndDate/userId/{executor_id}:
+    get:
+      tags:
+      - Чтение
+      summary: Получить визиты сотрудника
+      operationId: getAppointmentsByExecutorAndDate
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: executor_id
+        in: path
+        required: true
+        description: ID сотрудника-исполнителя.
+        schema:
+          type: integer
+        example: 35509
+      - name: date
+        in: query
+        required: true
+        description: Дата или начало периода.
+        schema:
+          type: string
+        example: '1718323200'
+      - name: date2
+        in: query
+        required: false
+        description: Дата окончания периода.
+        schema:
+          type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /list/m/getAppointmentsByExecutorAndDate/userId/{executor_id}
+      x-legacy-token-in-url-path: /list/a/{account_id}/u/{user_id}/t/{token}/m/getAppointmentsByExecutorAndDate/userId/{executor_id}
+  /list/a/{account_id}/u/{user_id}/m/ClientFeedbacks:
+    get:
+      tags:
+      - Чтение
+      summary: Получить список отзывов
+      operationId: listClientFeedbacks
+      description: Возвращает отзывы клиентов, оставленные через форму контроля качества.
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /list/m/ClientFeedbacks
+      x-legacy-token-in-url-path: /list/a/{account_id}/u/{user_id}/t/{token}/m/ClientFeedbacks
+  /list/a/{account_id}/u/{user_id}/m/getAppointmentClientsByExecutorId:
+    get:
+      tags:
+      - Чтение
+      summary: Получить клиентов визитов по исполнителю или кабинету
+      operationId: getAppointmentClientsByExecutorId
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: executorId
+        in: query
+        required: true
+        description: Идентификатор исполнителя или кабинета.
+        schema:
+          type: integer
+        example: 35509
+      - name: dateWhen
+        in: query
+        required: true
+        description: Момент или начало периода.
+        schema:
+          type: string
+        example: '2026-06-01'
+      - name: dateTill
+        in: query
+        required: false
+        description: Конец периода; границы включительные.
+        schema:
+          type: string
+        example: '2026-06-02'
+      - name: offset
+        in: query
+        required: false
+        description: Смещение; сортировка по ID клиента убыванию. Лимит запроса 100.
+        schema:
+          type: integer
+          minimum: 0
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /list/m/getAppointmentClientsByExecutorId
+      x-legacy-token-in-url-path: /list/a/{account_id}/u/{user_id}/t/{token}/m/getAppointmentClientsByExecutorId
+  /list/a/{account_id}/u/{user_id}/m/Invoices:
+    get:
+      tags:
+      - Чтение
+      summary: Получить оплаченные счета клиента
+      operationId: getPaidClientInvoices
+      description: Счета возвращаются от самого старого. invoice.kkm_data.services_and_goods содержит услуги/товары с учетом
+        скидок и бонусов; kkm_data.payments содержит оплаты. Субклиент визита находится в appointment.subclient_id.
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: client_id
+        in: query
+        required: true
+        description: ID клиента.
+        schema:
+          type: integer
+        example: 626297
+      - name: type
+        in: query
+        required: false
+        description: 'Типы сущностей: sale, appointment, abonement. Без параметра возвращаются все.'
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - sale
+            - appointment
+            - abonement
+        example:
+        - appointment
+        style: form
+        explode: false
+      - name: from
+        in: query
+        required: false
+        description: Дата начала с учетом часового пояса аккаунта; можно указать время.
+        schema:
+          type: string
+        example: '2026-06-01'
+      - name: till
+        in: query
+        required: false
+        description: Дата окончания; время указать нельзя, округляется до полуночи следующего дня.
+        schema:
+          type: string
+      - name: offset
+        in: query
+        required: false
+        description: Смещение пагинации.
+        schema:
+          type: integer
+          minimum: 0
+      - name: limit
+        in: query
+        required: false
+        description: Лимит результатов; максимум API 100.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /list/m/Invoices
+      x-legacy-token-in-url-path: /list/a/{account_id}/u/{user_id}/t/{token}/m/Invoices
+  /list/a/{account_id}/u/{user_id}/m/GetServiceGroups:
+    get:
+      tags:
+      - Чтение
+      summary: Получить группы услуг
+      operationId: getServiceGroups
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /list/m/GetServiceGroups
+      x-legacy-token-in-url-path: /list/a/{account_id}/u/{user_id}/t/{token}/m/GetServiceGroups
+  /edit/a/{account_id}/u/{user_id}/m/Clients/:
+    get:
+      tags:
+      - Редактирование
+      summary: Редактировать карточку клиента
+      operationId: editClient
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: id
+        in: query
+        required: true
+        description: Идентификатор клиента.
+        schema:
+          type: integer
+        example: 1090914
+      - name: second_name
+        in: query
+        required: false
+        description: Фамилия клиента.
+        schema:
+          type: string
+        example: Петров
+      - name: first_name
+        in: query
+        required: false
+        description: Имя клиента.
+        schema:
+          type: string
+        example: Петр
+      - name: patron_name
+        in: query
+        required: false
+        description: Отчество клиента.
+        schema:
+          type: string
+        example: Петрович
+      - name: phone
+        in: query
+        required: false
+        description: Телефон клиента.
+        schema:
+          type: string
+        example: '74953722274'
+      - name: client_groups
+        in: query
+        required: false
+        description: Группы клиента.
+        schema:
+          type: array
+          items:
+            type: string
+        example:
+        - VIP
+        style: form
+        explode: false
+      - name: sex
+        in: query
+        required: false
+        description: 'Пол: 1 - мужской, 0 - женский.'
+        schema:
+          type: integer
+          enum:
+          - 0
+          - 1
+      - name: birth_date
+        in: query
+        required: false
+        description: Дата рождения.
+        schema:
+          type: string
+        example: 23.02.1991
+      - name: lead_source
+        in: query
+        required: false
+        description: Источник клиента.
+        schema:
+          type: string
+        example: Internet
+      - name: email
+        in: query
+        required: false
+        description: Email клиента.
+        schema:
+          type: string
+          format: email
+        example: petrov@mail.ru
+      - name: living_address
+        in: query
+        required: false
+        description: Адрес клиента.
+        schema:
+          type: string
+        example: СПБ, Невский пр. 1
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /edit/m/Clients/
+      x-legacy-token-in-url-path: /edit/a/{account_id}/u/{user_id}/t/{token}/m/Clients/
+  /edit/a/{account_id}/u/{user_id}/m/Appointments/:
+    get:
+      tags:
+      - Редактирование
+      summary: Редактировать одиночный визит
+      operationId: editAppointment
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: id
+        in: query
+        required: true
+        description: Идентификатор визита.
+        schema:
+          type: integer
+        example: 1924740
+      - name: executor_id
+        in: query
+        required: false
+        description: Новый или существующий исполнитель.
+        schema:
+          type: integer
+        example: 37451
+      - name: start_datetime
+        in: query
+        required: false
+        description: Начало; минуты должны быть кратны 15.
+        schema:
+          type: string
+        example: '2018-03-24 13:00:00'
+      - name: finish_datetime
+        in: query
+        required: false
+        description: Окончание; минуты должны быть кратны 15.
+        schema:
+          type: string
+        example: '2018-03-24 14:30:00'
+      - name: services_ids[]
+        in: query
+        required: false
+        description: Идентификаторы добавляемых услуг.
+        schema:
+          type: array
+          items:
+            type: integer
+        example:
+        - 368205
+        style: form
+        explode: true
+      - name: subclient_id
+        in: query
+        required: false
+        description: ID субклиента.
+        schema:
+          type: integer
+        example: 11111
+      - name: client_id
+        in: query
+        required: false
+        description: ID клиента.
+        schema:
+          type: integer
+        example: 1069175
+      - name: removed_appointed_services[]
+        in: query
+        required: false
+        description: ID связанных с визитом услуг, которые нужно удалить.
+        schema:
+          type: array
+          items:
+            type: integer
+        example:
+        - 2639091
+        style: form
+        explode: true
+      - name: status
+        in: query
+        required: false
+        description: Статус визита.
+        schema:
+          type: string
+          enum: *id001
+        example: finished
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /edit/m/Appointments/
+      x-legacy-token-in-url-path: /edit/a/{account_id}/u/{user_id}/t/{token}/m/Appointments/
+  /edit/a/{account_id}/u/{user_id}/m/AppointmentClientLinks/:
+    get:
+      tags:
+      - Редактирование
+      summary: Редактировать клиента в визите
+      operationId: editAppointmentClientLink
+      description: AppointmentClientLinks хранит привязку клиента и связанную с клиентом информацию, тогда как Appointments
+        хранит общие данные визита.
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: id
+        in: query
+        required: true
+        description: Идентификатор связи клиента с визитом.
+        schema:
+          type: integer
+        example: 1924740
+      - name: appointment_id
+        in: query
+        required: true
+        description: Идентификатор визита.
+        schema:
+          type: integer
+        example: 1924995
+      - name: client_id
+        in: query
+        required: true
+        description: Идентификатор клиента.
+        schema:
+          type: integer
+        example: 1069175
+      - name: status
+        in: query
+        required: true
+        description: Статус визита.
+        schema:
+          type: string
+          enum:
+          - scheduled
+          - confirmed
+          - in_progress
+          - finished
+          - cancelled
+          - missed
+        example: confirmed
+      - name: service_pack_id
+        in: query
+        required: false
+        description: Идентификатор абонемента/скидки.
+        schema:
+          type: integer
+        example: 95483
+      - name: appointment_source
+        in: query
+        required: true
+        description: Источник визита, включая roistat_visit.
+        schema:
+          type: string
+        example: Газета
+      - name: subclient_id
+        in: query
+        required: false
+        description: Идентификатор субклиента.
+        schema:
+          type: integer
+        example: 111111
+      - name: paid
+        in: query
+        required: true
+        description: Флаг оплаты.
+        schema:
+          type: integer
+          enum:
+          - 0
+          - 1
+        example: 1
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /edit/m/AppointmentClientLinks/
+      x-legacy-token-in-url-path: /edit/a/{account_id}/u/{user_id}/t/{token}/m/AppointmentClientLinks/
+  /add/a/{account_id}/u/{user_id}/m/FinancialTransaction/:
+    get:
+      tags:
+      - Редактирование
+      summary: Изменить баланс клиента
+      operationId: addFinancialTransaction
+      description: Передайте credit либо debit. Для credit число трактуется как списание; при delta знак задается явно.
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: financial_account_id
+        in: query
+        required: true
+        description: ID депозитного или бонусного счета клиента.
+        schema:
+          type: integer
+        example: 2841593
+      - name: description
+        in: query
+        required: true
+        description: Описание транзакции.
+        schema:
+          type: string
+        example: снова депозит
+      - name: credit
+        in: query
+        required: false
+        description: Сумма списания; воспринимается как отрицательное изменение.
+        schema:
+          type: number
+      - name: debit
+        in: query
+        required: false
+        description: Сумма зачисления.
+        schema:
+          type: number
+      - name: delta
+        in: query
+        required: true
+        description: Изменение со знаком, например -500 или +500.
+        schema:
+          type: number
+        example: 500
+      - name: invoice_id
+        in: query
+        required: false
+        description: Идентификатор счета.
+        schema:
+          type: integer
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /add/m/FinancialTransaction/
+      x-legacy-token-in-url-path: /add/a/{account_id}/u/{user_id}/t/{token}/m/FinancialTransaction/
+  /edit/a/{account_id}/u/{user_id}/m/Invoices/:
+    get:
+      tags:
+      - Редактирование
+      summary: Редактировать статус счета
+      operationId: editInvoiceStatus
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: id
+        in: query
+        required: true
+        description: Идентификатор счета.
+        schema:
+          type: integer
+        example: 615539
+      - name: deposit
+        in: query
+        required: true
+        description: Можно ли использовать депозит клиента.
+        schema:
+          type: integer
+          enum:
+          - 0
+          - 1
+        example: 0
+      - name: negative_allowed
+        in: query
+        required: true
+        description: Разрешено ли уходить в минус.
+        schema:
+          type: integer
+          enum:
+          - 0
+          - 1
+        example: 0
+      - name: bonus
+        in: query
+        required: true
+        description: Можно ли использовать бонусный счет.
+        schema:
+          type: integer
+          enum:
+          - 0
+          - 1
+        example: 0
+      - name: bonus_amount
+        in: query
+        required: false
+        description: Сколько бонусов списать.
+        schema:
+          type: number
+        example: 0
+      - name: paid
+        in: query
+        required: true
+        description: Статус оплаты счета.
+        schema:
+          type: integer
+          enum:
+          - 0
+          - 1
+        example: 1
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /edit/m/Invoices/
+      x-legacy-token-in-url-path: /edit/a/{account_id}/u/{user_id}/t/{token}/m/Invoices/
+      x-documentation-notes:
+      - Если по счету не было поступлений и deposit=0, статус не изменится. Метод ставит Оплачен, когда внесены все средства.
+  /edit/a/{account_id}/u/{user_id}/m/ServicePacksAbonement/:
+    get:
+      tags:
+      - Редактирование
+      summary: Назначить клиенту доступный абонемент
+      operationId: assignServicePackAbonement
+      description: Позволяет оформить продажу абонемента от пользователя без права редактировать абонементы.
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: client_id
+        in: query
+        required: true
+        description: Идентификатор клиента.
+        schema:
+          type: integer
+        example: 1069175
+      - name: parent_id
+        in: query
+        required: true
+        description: Идентификатор абонемента из раздела Возможности.
+        schema:
+          type: integer
+        example: 35486
+      - name: discounted_price
+        in: query
+        required: true
+        description: Стоимость продажи для конкретного клиента.
+        schema:
+          type: number
+        example: 1200
+      - name: can_be_used_from
+        in: query
+        required: false
+        description: Дата начала использования YYYY-MM-DD.
+        schema:
+          type: string
+        example: '2018-03-30'
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /edit/m/ServicePacksAbonement/
+      x-legacy-token-in-url-path: /edit/a/{account_id}/u/{user_id}/t/{token}/m/ServicePacksAbonement/
+  /edit/a/{account_id}/u/{user_id}/m/ScheduleUnit/:
+    get:
+      tags:
+      - Редактирование
+      summary: Редактировать график сотрудника
+      operationId: editScheduleUnit
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: id
+        in: query
+        required: true
+        description: ID существующего участка расписания.
+        schema:
+          type: integer
+        example: 1566788
+      - name: start_time
+        in: query
+        required: true
+        description: Дата и время начала.
+        schema:
+          type: string
+        example: '2018-03-24 11:00:00'
+      - name: end_time
+        in: query
+        required: true
+        description: Дата и время окончания.
+        schema:
+          type: string
+        example: '2018-03-24 19:00:00'
+      - name: user_id
+        in: query
+        required: true
+        description: ID сотрудника.
+        schema:
+          type: integer
+        example: 35499
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /edit/m/ScheduleUnit/
+      x-legacy-token-in-url-path: /edit/a/{account_id}/u/{user_id}/t/{token}/m/ScheduleUnit/
+      x-documentation-notes:
+      - У сотрудника уже должен существовать график; изменяется конкретный участок.
+  /add/a/{account_id}/u/{user_id}/m/DynamicObjects/:
+    get:
+      tags:
+      - Редактирование
+      summary: Редактировать результат исследования
+      operationId: editResearchResult
+      description: Несмотря на назначение операции, документация использует action=add.
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: id
+        in: query
+        required: true
+        description: Идентификатор исследования.
+        schema:
+          type: integer
+        example: 38373
+      - name: research_type
+        in: query
+        required: true
+        description: Изменяемое динамическое поле.
+        schema:
+          type: string
+        example: лабораторное исследование 2
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /add/m/DynamicObjects/
+      x-legacy-token-in-url-path: /add/a/{account_id}/u/{user_id}/t/{token}/m/DynamicObjects/
+  /edit/a/{account_id}/u/{user_id}/m/Services/:
+    get:
+      tags:
+      - Редактирование
+      summary: Редактировать услугу
+      operationId: editService
+      description: ''
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: id
+        in: query
+        required: true
+        description: ID услуги.
+        schema:
+          type: integer
+        example: 12345
+      - name: barcode
+        in: query
+        required: false
+        description: Штрих-код.
+        schema:
+          type: string
+      - name: name
+        in: query
+        required: false
+        description: Название услуги.
+        schema:
+          type: string
+        example: Обновленная услуга
+      - name: price
+        in: query
+        required: false
+        description: Стоимость.
+        schema:
+          type: number
+        example: 2000
+      - name: service_groups
+        in: query
+        required: false
+        description: Группа.
+        schema:
+          type: string
+        example: Основные
+      - name: vendor_code
+        in: query
+        required: false
+        description: Артикул.
+        schema:
+          type: string
+        example: ART123
+      - name: archived
+        in: query
+        required: false
+        description: true - архивировать, false - восстановить.
+        schema:
+          type: boolean
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /edit/m/Services/
+      x-legacy-token-in-url-path: /edit/a/{account_id}/u/{user_id}/t/{token}/m/Services/
+  /edit/a/{account_id}/u/{user_id}/m/ServicesMaterials/s/upsertSupplyAPI:
+    get:
+      tags:
+      - Склад
+      summary: Добавить поставку нового товара
+      operationId: upsertSupply
+      description: Создает одновременно новый товар и новую поставку. Все параметры обязательны.
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: ic_invoice_number
+        in: query
+        required: true
+        description: Номер накладной из 1С.
+        schema:
+          type: string
+        example: NEW_ENTITY
+      - name: date
+        in: query
+        required: true
+        description: Дата поставки.
+        schema:
+          type: string
+        example: 17.06.2023
+      - name: warehouse
+        in: query
+        required: true
+        description: Склад.
+        schema:
+          type: string
+        example: entities
+      - name: quantity
+        in: query
+        required: true
+        description: Количество.
+        schema:
+          type: number
+        example: 352
+      - name: cost
+        in: query
+        required: true
+        description: Общая стоимость закупки.
+        schema:
+          type: number
+        example: 1200
+      - name: ic_code
+        in: query
+        required: true
+        description: Уникальный код 1С товара.
+        schema:
+          type: string
+        example: '15645700'
+      - name: name
+        in: query
+        required: true
+        description: Наименование товара.
+        schema:
+          type: string
+        example: new_entity-99
+      - name: vendor_code
+        in: query
+        required: true
+        description: Артикул.
+        schema:
+          type: string
+        example: '324234'
+      - name: material_groups
+        in: query
+        required: true
+        description: Категория товара.
+        schema:
+          type: string
+        example: entity99
+      - name: unit_of_measure
+        in: query
+        required: true
+        description: Единица измерения.
+        schema:
+          type: string
+        example: шт
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /edit/m/ServicesMaterials/s/upsertSupplyAPI
+      x-legacy-token-in-url-path: /edit/a/{account_id}/u/{user_id}/t/{token}/m/ServicesMaterials/s/upsertSupplyAPI
+      x-documentation-notes: &id002
+      - Нужно включить COMPONENT_API_SERVICESMATERIALS_CRUD.
+      - Для полей ic_code и ic_invoice_number используется настройка COMPONENT_WAREHOUSE_USE_IC_CODE_AND_IC_INVOICE_NUMBER.
+  /edit/a/{account_id}/u/{user_id}/m/ServicesMaterials/s/deleteSupplyAPI:
+    get:
+      tags:
+      - Склад
+      summary: Удалить поставку
+      operationId: deleteSupply
+      description: 'Ставит deleted=true: поставка скрывается из интерфейса, операции с товаром блокируются.'
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: ic_invoice_number
+        in: query
+        required: true
+        description: Номер накладной.
+        schema:
+          type: string
+        example: NEW_ENTITY
+      - name: date
+        in: query
+        required: true
+        description: Дата накладной DD.MM.YYYY.
+        schema:
+          type: string
+        example: 17.06.2023
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /edit/m/ServicesMaterials/s/deleteSupplyAPI
+      x-legacy-token-in-url-path: /edit/a/{account_id}/u/{user_id}/t/{token}/m/ServicesMaterials/s/deleteSupplyAPI
+      x-documentation-notes: *id002
+  /edit/a/{account_id}/u/{user_id}/m/ServicesMaterials/s/zeroingSupplyAPI/:
+    get:
+      tags:
+      - Склад
+      summary: Обнулить поставку
+      operationId: zeroSupply
+      description: Количество всех товаров указанной накладной становится равным 0.
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: ic_invoice_number
+        in: query
+        required: true
+        description: Номер накладной.
+        schema:
+          type: string
+        example: NEW_ENTITY
+      - name: date
+        in: query
+        required: true
+        description: Дата создания накладной DD.MM.YYYY.
+        schema:
+          type: string
+        example: 17.06.2023
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /edit/m/ServicesMaterials/s/zeroingSupplyAPI/
+      x-legacy-token-in-url-path: /edit/a/{account_id}/u/{user_id}/t/{token}/m/ServicesMaterials/s/zeroingSupplyAPI/
+      x-documentation-notes: *id002
+  /edit/a/{account_id}/u/{user_id}/m/ServicesMaterials/s/editMaterialAPI:
+    get:
+      tags:
+      - Склад
+      summary: Изменить товар (номенклатуру)
+      operationId: editMaterial
+      description: Стоимость этим методом не изменяется.
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: ic_code
+        in: query
+        required: true
+        description: Код 1С, по которому ищется товар.
+        schema:
+          type: string
+        example: '15645700'
+      - name: name
+        in: query
+        required: false
+        description: Наименование товара.
+        schema:
+          type: string
+      - name: vendor_code
+        in: query
+        required: false
+        description: Артикул.
+        schema:
+          type: string
+      - name: material_groups
+        in: query
+        required: false
+        description: Категория товара.
+        schema:
+          type: string
+      - name: unit_of_measure
+        in: query
+        required: false
+        description: Единица измерения.
+        schema:
+          type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /edit/m/ServicesMaterials/s/editMaterialAPI
+      x-legacy-token-in-url-path: /edit/a/{account_id}/u/{user_id}/t/{token}/m/ServicesMaterials/s/editMaterialAPI
+      x-documentation-notes: *id002
+  /edit/a/{account_id}/u/{user_id}/m/ServicesMaterials/s/editSupplyAPI/:
+    get:
+      tags:
+      - Склад
+      summary: Изменить поставку
+      operationId: editSupply
+      description: Для накладной с несколькими товарами выполняется отдельный запрос для каждой позиции.
+      parameters:
+      - $ref: '#/components/parameters/AccountId'
+      - $ref: '#/components/parameters/UserId'
+      - name: ic_code
+        in: query
+        required: true
+        description: Код 1С текущего товара в поставке.
+        schema:
+          type: string
+      - name: ic_invoice_number
+        in: query
+        required: true
+        description: Номер изменяемой накладной.
+        schema:
+          type: string
+      - name: cost
+        in: query
+        required: false
+        description: Общая закупочная стоимость партии.
+        schema:
+          type: number
+      - name: quantity
+        in: query
+        required: false
+        description: Количество товара в партии.
+        schema:
+          type: number
+      - name: warehouse
+        in: query
+        required: false
+        description: Склад поступления.
+        schema:
+          type: string
+      - name: date
+        in: query
+        required: false
+        description: Дата поступления.
+        schema:
+          type: string
+      - name: new_ic_invoice_number
+        in: query
+        required: false
+        description: Новый номер накладной; ID поставки в Клиентикс не меняется.
+        schema:
+          type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericResponse'
+      security:
+      - BearerAuth: []
+      x-http-method-note: Документация Клиентикс требует HTTP GET, даже если операция изменяет данные.
+      x-authorized-session-path: /edit/m/ServicesMaterials/s/editSupplyAPI/
+      x-legacy-token-in-url-path: /edit/a/{account_id}/u/{user_id}/t/{token}/m/ServicesMaterials/s/editSupplyAPI/
+      x-documentation-notes: *id002
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: API-токен из Настройки -> API.
+  parameters:
+    AccountId:
+      name: account_id
+      in: path
+      required: true
+      description: API ID аккаунта из Настройки -> API.
+      schema:
+        type: string
+    UserId:
+      name: user_id
+      in: path
+      required: true
+      description: API ID пользователя из Настройки -> API.
+      schema:
+        type: string
+  responses:
+    GenericResponse:
+      description: Ответ REST-обертки Клиентикс. Конкретная структура object зависит от метода.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GenericResponse'
+    SendMessageResponse:
+      description: Ответ коммуникационной операции. Прикладная ошибка может находиться в object при status=ok.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GenericResponse'
+          examples:
+            success:
+              value:
+                status: ok
+                object:
+                  clientFeedAction: Message
+                  gateway: ClientixSMS
+                  status: true
+            businessError:
+              value:
+                status: ok
+                messages:
+                - Данные успешно изменены.
+                object:
+                  clientFeedAction: Message
+                  success: false
+                  error: В карточке клиента не отмечено согласие на получение смс-сообщений.
+                  errorTitle: Не удалось отправить СМС
+    SubClientsResponse:
+      description: Пагинированный список субклиентов.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SubClientsResponse'
+    BalancesResponse:
+      description: Список касс и финансовых счетов.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BalancesResponse'
+  schemas:
+    GenericResponse:
+      type: object
+      additionalProperties: true
+      properties:
+        status:
+          oneOf:
+          - type: string
+          - type: boolean
+        messages:
+          type: array
+          items:
+            type: string
+        object:
+          description: Результат или прикладная ошибка.
+          type:
+          - object
+          - array
+          - string
+          - number
+          - boolean
+          - 'null'
+          additionalProperties: true
+        errors:
+          description: Ошибки модели, когда backend submit вернул false.
+          type:
+          - object
+          - array
+          - 'null'
+          additionalProperties: true
+    SubClientsResponse:
+      type: object
+      required:
+      - offset
+      - limit
+      - count
+      - items
+      properties:
+        offset:
+          type: integer
+          description: 'Рекомендуемое смещение следующего запроса: текущий offset + limit.'
+        limit:
+          type: integer
+        count:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubClient'
+    SubClient:
+      type: object
+      additionalProperties: true
+      properties:
+        id:
+          type: integer
+        client_id:
+          type: integer
+        created:
+          type: string
+        modified:
+          type: string
+        account_id:
+          type: integer
+        external_id:
+          type:
+          - string
+          - 'null'
+        dynamic_id:
+          type:
+          - string
+          - 'null'
+        archived:
+          type: boolean
+        deleted:
+          type: boolean
+        name:
+          type: string
+        birth_date:
+          type: string
+          description: DD.MM.YYYY
+        living_address:
+          type: string
+        sex:
+          type: string
+          enum:
+          - male
+          - female
+        snils:
+          type: string
+        document_type:
+          type: string
+        passport_serial:
+          type: string
+        passport_number:
+          type: string
+        passport_author:
+          type: string
+        status_egisz:
+          type: string
+          description: Может содержать HTML.
+        egisz_id:
+          type: string
+        agreement_egisz:
+          type: boolean
+        description:
+          type: string
+      description: Набор полей может отличаться из-за динамических полей аккаунта.
+    BalancesResponse:
+      type: object
+      additionalProperties: true
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BalanceAccount'
+        mode:
+          type: string
+    BalanceAccount:
+      type: object
+      additionalProperties: true
+      properties:
+        id:
+          type: integer
+        created:
+          type: string
+        modified:
+          type: string
+        author_id:
+          type:
+          - integer
+          - 'null'
+        account_id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          examples:
+          - company_balance
+        description:
+          type:
+          - string
+          - 'null'
+        archived:
+          type: boolean
+        object_id:
+          type:
+          - integer
+          - 'null'
+        payment_type:
+          type:
+          - string
+          - 'null'
+        organization:
+          type:
+          - string
+          - 'null'
+        balance:
+          type: string
+        last_transaction_date:
+          type:
+          - string
+          - 'null'
